@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from .config import settings
-client=AsyncIOMotorClient(settings.mongodb_url); db=client[settings.database_name]
+client=AsyncIOMotorClient(settings.mongodb_url, serverSelectionTimeoutMS=8000); db=client[settings.database_name]
 users=db.users; jobs=db.jobs; sources=db.sources; logs=db.logs
 async def init_db():
  await users.create_index('email',unique=True)
