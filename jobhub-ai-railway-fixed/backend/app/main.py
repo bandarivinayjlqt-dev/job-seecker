@@ -24,8 +24,11 @@ def ser(x):
  x=dict(x); x['id']=str(x.pop('_id')); return x
 @app.on_event('startup')
 async def startup():
- await init_db()
- if not await users.find_one({'email':settings.admin_email.lower()}): await users.insert_one({'name':'JobHub Admin','email':settings.admin_email.lower(),'password_hash':hash_password(settings.admin_password),'role':'admin','skills':[]})
+ try:
+  await asyncio.wait_for(init_db(), timeout=10)
+  if not await users.find_one({'email':settings.admin_email.lower()}): await users.insert_one({'name':'JobHub Admin','email':settings.admin_email.lower(),'password_hash':hash_password(settings.admin_password),'role':'admin','skills':[]})
+ except Exception as e:
+  print(f'[startup] WARNING: could not connect to MongoDB ({e}). Check the MONGODB_URL variable. The app will still start, but DB-backed routes will fail until this is fixed.')
 @app.get('/')
 async def root():
     index=Path(__file__).resolve().parent.parent / 'static' / 'index.html'
