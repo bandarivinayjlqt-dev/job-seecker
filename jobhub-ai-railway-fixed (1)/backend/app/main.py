@@ -638,10 +638,34 @@ async def scheduler():
             max(1, settings.scrape_interval_hours) * 3600
         )
 
-
 @app.on_event("startup")
-async def run_scheduler():
-    asyncio.create_task(scheduler())
+async def startup():
+    try:
+        await asyncio.wait_for(init_db(), timeout=10)
+
+        admin_email = settings.admin_email.lower()
+
+        if not await users.find_one({"email": admin_email}):
+            await users.insert_one(
+                {
+                    "name": "JobHub Admin",
+                    "email": admin_email,
+                    "password_hash": hash_password(settings.admin_password),
+                    "role": "admin",
+                    "skills": [],
+                    "experience_years": 0,
+                    "preferred_roles": [],
+                    "preferred_locations": [],
+                    "preferred_job_types": [],
+                    "remote_only": False,
+                }
+            )
+
+        print("Database initialization successful")
+
+    except Exception as e:
+        print(f"Database initialization failed: {e}")
+        print("Starting API anyway so Railway healthcheck can succeed.")
 
 
 # Serve the Vite production build from the same Railway service.
